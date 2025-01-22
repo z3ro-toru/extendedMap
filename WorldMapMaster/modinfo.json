@@ -1,0 +1,13 @@
+{
+    "type": "code",
+    "modid": "worldmapmaster",
+    "name": "World Map Master (WMM)",
+    "authors": [
+        "ZigTheHedge"
+    ],
+    "description": "A couple of tweaks and QOL additions for the World Map",
+    "version": "1.19.8-1.0.0",
+    "dependencies": {
+        "game": "1.19.8"
+    }
+}
