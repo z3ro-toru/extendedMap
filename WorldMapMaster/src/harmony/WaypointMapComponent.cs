@@ -9,6 +9,7 @@ using Vintagestory.API.Config;
 using Vintagestory.API.MathTools;
 using Vintagestory.API.Util;
 using Vintagestory.GameContent;
+using Vintagestory.API.Common.Entities;
 
 namespace WorldMapMaster.src.harmony
 {
@@ -40,6 +41,12 @@ namespace WorldMapMaster.src.harmony
             if (___mouseOver = Math.Abs(dX) < size && Math.Abs(dY) < size)
             {
                 WorldMapMasterModSystem.wpIndex = ___waypointIndex;
+                EntityPos playerPosition = ___capi.World.Player.Entity.Pos;
+                double distance = Math.Sqrt(Math.Pow(playerPosition.X - ___waypoint.Position.X, 2) + Math.Pow(playerPosition.Z - ___waypoint.Position.Z, 2));
+                string text = $"{distance:F2} m";
+                string currentHover = hoverText.ToString().Trim();
+                if (!currentHover.EndsWith(text)) 
+                    hoverText.AppendLine(text);
             }
         }
     }
@@ -102,5 +109,6 @@ namespace WorldMapMaster.src.harmony
         }
         
     }
+
 
 }

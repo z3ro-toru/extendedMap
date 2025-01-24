@@ -30,6 +30,7 @@ namespace CakeBuild
         public string BuildConfiguration { get; }
         public string Version { get; }
         public string Name { get; }
+        public string GameVersion { get; }
         public bool SkipJsonValidation { get; }
 
         public BuildContext(ICakeContext context)
@@ -40,6 +41,11 @@ namespace CakeBuild
             var modInfo = context.DeserializeJsonFromFile<ModInfo>($"../{ProjectName}/modinfo.json");
             Version = modInfo.Version;
             Name = modInfo.ModID;
+            foreach(ModDependency dep in modInfo.Dependencies)
+            {
+                if(dep.ModID == "game")
+                    GameVersion = dep.Version;
+            }
         }
     }
 
@@ -108,7 +114,7 @@ namespace CakeBuild
             {
                 context.CopyFile($"../{BuildContext.ProjectName}/modicon.png", $"../Releases/{context.Name}/modicon.png");
             }
-            context.Zip($"../Releases/{context.Name}", $"../Releases/{context.Name}_{context.Version}.zip");
+            context.Zip($"../Releases/{context.Name}", $"../Releases/{context.Name}_{context.GameVersion}-{context.Version}.zip");
         }
     }
 

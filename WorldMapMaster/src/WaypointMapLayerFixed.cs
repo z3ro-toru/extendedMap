@@ -26,10 +26,12 @@ namespace WorldMapMaster.src
             capi = api as ICoreClientAPI;
         }
 
-        public override void ComposeDialogExtras(GuiDialogWorldMap guiDialogWorldMap, GuiComposer compo)
+        public override void ComposeDialogExtras(GuiDialogWorldMap guiDialogWorldMap = null, GuiComposer compo = null)
         {
-            this.guiDialogWorldMap = guiDialogWorldMap;
-            this.compo = compo;
+            if(guiDialogWorldMap != null)
+                this.guiDialogWorldMap = guiDialogWorldMap;
+            if(compo != null)
+                this.compo = compo;
 
             valData.Clear();
             dispData.Clear();
@@ -46,8 +48,8 @@ namespace WorldMapMaster.src
             ElementBounds dlgBounds =
                 ElementStdBounds.AutosizedMainDialog
                 .WithFixedPosition(
-                    (compo.Bounds.renderX + compo.Bounds.OuterWidth) / RuntimeEnv.GUIScale + 10,
-                    compo.Bounds.renderY / RuntimeEnv.GUIScale + 120
+                    (this.compo.Bounds.renderX + this.compo.Bounds.OuterWidth) / RuntimeEnv.GUIScale + 10,
+                    this.compo.Bounds.renderY / RuntimeEnv.GUIScale + 120
                 )
                 .WithAlignment(EnumDialogArea.None)
             ;
@@ -55,11 +57,11 @@ namespace WorldMapMaster.src
             ElementBounds bgBounds = ElementBounds.Fill.WithFixedPadding(GuiStyle.ElementToDialogPadding);
             bgBounds.BothSizing = ElementSizing.FitToChildren;
 
-            guiDialogWorldMap.Composers[key] =
+            this.guiDialogWorldMap.Composers[key] =
                 capi.Gui
                     .CreateCompo(key, dlgBounds)
                     .AddShadedDialogBG(bgBounds, false)
-                    .AddDialogTitleBar(Lang.Get("Your waypoints:"), () => { guiDialogWorldMap.Composers[key].Enabled = false; })
+                    .AddDialogTitleBar(Lang.Get("Your waypoints:"), () => { this.guiDialogWorldMap.Composers[key].Enabled = false; })
                     .BeginChildElements(bgBounds)
                         .AddDropDown(valData.ToArray(), dispData.ToArray(), 0, onSelectionChanged, ElementBounds.Fixed(0, 30, 160, 35), "wplist")
                     .EndChildElements()
@@ -83,6 +85,12 @@ namespace WorldMapMaster.src
                     break;
                 }
             }
+        }
+
+        public override void OnDataFromServer(byte[] data)
+        {
+            base.OnDataFromServer(data);
+            ComposeDialogExtras();
         }
     }
 }
