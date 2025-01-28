@@ -8,7 +8,7 @@
   "description": "A couple of tweaks and QOL additions for the World Map",
   "requiredOnClient": false,
   "requiredOnServer": false,
-  "version": "1.0.2",
+  "version": "1.0.3",
   "dependencies": {
     "game": "1.19.8"
   }

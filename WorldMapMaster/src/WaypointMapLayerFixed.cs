@@ -69,7 +69,7 @@ namespace WorldMapMaster.src
                     .EndChildElements()
                     .Compose()
             ;
-
+            this.guiDialogWorldMap.Composers[key].Enabled = false;
         }
 
         private void onSelectionChanged(string code, bool selected)
@@ -92,7 +92,27 @@ namespace WorldMapMaster.src
         public override void OnDataFromServer(byte[] data)
         {
             base.OnDataFromServer(data);
-            ComposeDialogExtras();
+            GuiElementDropDown wpList = this.guiDialogWorldMap.Composers[key].GetElement("wplist") as GuiElementDropDown;
+
+            valData.Clear();
+            dispData.Clear();
+
+            valData.Add("--1");
+            dispData.Add("None");
+
+            foreach (Waypoint waypoint in ownWaypoints)
+            {
+                valData.Add(waypoint.Guid);
+                dispData.Add(waypoint.Title);
+            }
+
+            wpList.SetList(valData.ToArray(), dispData.ToArray());
+            //ComposeDialogExtras();
+        }
+
+        public override void OnMapClosedClient()
+        {
+            base.OnMapClosedClient();
         }
     }
 }
