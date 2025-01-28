@@ -21,8 +21,10 @@ namespace WorldMapMaster.src
         private GuiComposer compo;
 
 
-        public WaypointMapLayerFixed(ICoreAPI api, IWorldMapManager mapSink) : base(api, mapSink)
+        public WaypointMapLayerFixed(ICoreAPI api, IWorldMapManager mapSink) 
+            : base(api, mapSink)
         {
+            WorldMapMasterModSystem.Api.Logger.Event("[worldmapmaster] WaypointMapLayerFixed instanciated. Side: " + WorldMapMasterModSystem.Api.Side);
             capi = api as ICoreClientAPI;
         }
 

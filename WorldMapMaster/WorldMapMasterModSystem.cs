@@ -1,5 +1,7 @@
 ﻿using HarmonyLib;
+using System;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using Vintagestory.API.Client;
 using Vintagestory.API.Common;
 using Vintagestory.API.Config;
@@ -14,17 +16,24 @@ namespace WorldMapMaster
         Harmony harmony = new Harmony("com.cwelth.worldmapmaster");
         public static int wpIndex = -1;
         public static Vec3d newWpPos;
-        ICoreClientAPI capi;
+        public static ICoreAPI Api;
+        public static ICoreClientAPI capi;
         GuiDialogAddWayPoint addWpDlg;
 
         //public override bool ShouldLoad(EnumAppSide forSide) => forSide == EnumAppSide.Client;
 
+        public override void StartPre(ICoreAPI api)
+        {
+            base.StartPre(api);
+            Api = api;
+            api.Logger.Event("[worldmapmaster] Starting " + api.Side);
+            //Harmony.DEBUG = true;
+            harmony.PatchAll();
+
+        }
         public override void Start(ICoreAPI api)
         {
             base.Start(api);
-            
-            //Harmony.DEBUG = true;
-            harmony.PatchAll();
         }
 
         public override void StartClientSide(ICoreClientAPI api)

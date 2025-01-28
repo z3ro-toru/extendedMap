@@ -57,6 +57,7 @@ namespace WorldMapMaster.src.harmony
     {
         public static bool Prefix()
         {
+
             WorldMapMasterModSystem.wpIndex = -1;
             
             return true;
@@ -83,6 +84,7 @@ namespace WorldMapMaster.src.harmony
         /*
         public static bool Prefix(WorldMapManager __instance)
         {
+            WorldMapMasterModSystem.Api.Logger.Event("[worldmapmaster] Prefix of WorldMapManager_RegisterDefaultMapLayers called. Side: " + WorldMapMasterModSystem.Api.Side);
             __instance.RegisterMapLayer<ChunkMapLayer>("chunks", 0);
             __instance.RegisterMapLayer<PlayerMapLayer>("players", 0.5);
             __instance.RegisterMapLayer<EntityMapLayer>("entities", 0.5);
@@ -94,6 +96,9 @@ namespace WorldMapMaster.src.harmony
         
         public static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions)
         {
+            
+            WorldMapMasterModSystem.Api.Logger.Event("[worldmapmaster] Transplier of WorldMapManager_RegisterDefaultMapLayers called. Side: " + WorldMapMasterModSystem.Api.Side);
+
             MethodInfo m_RegisterMapLayer = AccessTools.Method(typeof(WorldMapManager), "RegisterMapLayer", new Type[] { typeof(string), typeof(double) }, new Type[] { typeof(WaypointMapLayer) });
             MethodInfo m_RegisterMapLayerFixed = AccessTools.Method(typeof(WorldMapManager), "RegisterMapLayer", new Type[] { typeof(string), typeof(double) }, new Type[] { typeof(WaypointMapLayerFixed) });
 
@@ -109,6 +114,5 @@ namespace WorldMapMaster.src.harmony
         }
         
     }
-
 
 }
