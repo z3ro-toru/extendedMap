@@ -5,18 +5,33 @@ using System.Text;
 using System.Threading.Tasks;
 using Vintagestory.API.Client;
 using Vintagestory.API.Common;
+using Vintagestory.API.Common.Entities;
 using Vintagestory.API.Config;
 using Vintagestory.API.MathTools;
 using Vintagestory.GameContent;
+using static System.Net.Mime.MediaTypeNames;
 
 namespace WorldMapMaster.src
 {
+    public class WaypointListItem
+    {
+        public string code = "";
+        public string title = "";
+        public int id = 0;
+        public float distance = 0;
+    }
     public class WaypointMapLayerFixed : WaypointMapLayer
     {
+        /*
         List<string> valData = new List<string>();
         List<string> dispData = new List<string>();
+        */
+        List<WaypointListItem> wpListData = new List<WaypointListItem>();
+
         readonly string key = "worldmap-layer-waypoints";
         private ICoreClientAPI capi;
+        private string qsText = "";
+        private string wpListOrder = "timeasc";
         private GuiDialogWorldMap guiDialogWorldMap;
         private GuiComposer compo;
 
@@ -35,17 +50,7 @@ namespace WorldMapMaster.src
             if(compo != null)
                 this.compo = compo;
 
-            valData.Clear();
-            dispData.Clear();
-
-            valData.Add("--1");
-            dispData.Add("None");
-
-            foreach (Waypoint waypoint in ownWaypoints)
-            {
-                valData.Add(waypoint.Guid);
-                dispData.Add(waypoint.Title);
-            }
+            UpdateList();
 
             ElementBounds dlgBounds =
                 ElementStdBounds.AutosizedMainDialog
@@ -65,13 +70,89 @@ namespace WorldMapMaster.src
                     .AddShadedDialogBG(bgBounds, false)
                     .AddDialogTitleBar(Lang.Get("Your waypoints:"), () => { this.guiDialogWorldMap.Composers[key].Enabled = false; })
                     .BeginChildElements(bgBounds)
-                        .AddDropDown(valData.ToArray(), dispData.ToArray(), 0, onSelectionChanged, ElementBounds.Fixed(0, 30, 160, 35), "wplist")
+                        .AddDropDown(wpListData.Select(o => o.code).ToArray(), wpListData.Select(o => o.title).ToArray(), 0, onSelectionChanged, ElementBounds.Fixed(0, 120, 160, 35), "wplist")
+                        .AddAutoclearingText(ElementBounds.Fixed(0, 30, 160, 35), onQSChanged, null, "qs")
+                        .AddDropDown(new string[] { "timeasc", "timedesc", "distanceasc", "distancedesc" }, new string[] { "By time added (asc)", "By time added (desc)", "By distance (asc)", "By distance (desc)" }, 0, onOrderingChanged, ElementBounds.Fixed(0, 75, 160, 35), "orderlist")
                     .EndChildElements()
                     .Compose()
             ;
+            GuiElementTextInput qsTextElement = this.guiDialogWorldMap.Composers[key].GetElement("qs") as GuiElementTextInput;
+            qsTextElement.SetValue(qsText);
+            qsTextElement.SetPlaceHolderText("Quick filter");
+            GuiElementDropDown orderList = this.guiDialogWorldMap.Composers[key].GetElement("orderlist") as GuiElementDropDown;
+            orderList.SetSelectedValue(wpListOrder);
             this.guiDialogWorldMap.Composers[key].Enabled = false;
         }
 
+        private void onQSChanged(string text)
+        {
+            qsText = text;
+            UpdateList();
+        }
+        private void onOrderingChanged(string code, bool selected)
+        {
+            wpListOrder = code;
+            UpdateList();
+        }
+        private void UpdateList()
+        {
+            GuiElementDropDown wpList = null;
+
+            if(this.guiDialogWorldMap.Composers[key] != null)
+                wpList = this.guiDialogWorldMap.Composers[key].GetElement("wplist") as GuiElementDropDown;
+
+            /*
+            valData.Clear();
+            dispData.Clear();
+            
+            valData.Add("--1");
+            dispData.Add("None");
+
+            foreach (Waypoint waypoint in ownWaypoints)
+            {
+                if (waypoint.Title.Contains(qsText, StringComparison.InvariantCultureIgnoreCase))
+                {
+                    valData.Add(waypoint.Guid);
+                    dispData.Add(waypoint.Title);
+                }
+            }
+            */
+
+            wpListData.Clear();
+            int counter = 0;
+
+            EntityPos playerPosition = capi.World.Player.Entity.Pos;
+
+            foreach (Waypoint waypoint in ownWaypoints)
+            {
+                if (waypoint.Title.Contains(qsText, StringComparison.InvariantCultureIgnoreCase))
+                {
+                    float distance = (float)Math.Sqrt(Math.Pow(playerPosition.X - waypoint.Position.X, 2) + Math.Pow(playerPosition.Z - waypoint.Position.Z, 2));
+                    wpListData.Add(new WaypointListItem() { code = waypoint.Guid, title = $"{waypoint.Title} - {distance:F2}m", distance = distance, id = counter++ });
+                }
+            }
+
+            switch(wpListOrder)
+            {
+                case "timedesc":
+                    wpListData = wpListData.OrderByDescending(o => o.id).ToList();
+                    break;
+                case "distanceasc":
+                    wpListData = wpListData.OrderBy(o => o.distance).ToList();
+                    break;
+                case "distancedesc":
+                    wpListData = wpListData.OrderByDescending(o => o.distance).ToList();
+                    break;
+                case "timeasc":
+                    break;
+            }
+
+            wpListData.Insert(0, new WaypointListItem() { code = "--1", title = "None", distance = 0, id = -1 });
+
+            if (wpList != null)
+                wpList.SetList(wpListData.Select(o => o.code).ToArray(), wpListData.Select(o => o.title).ToArray());
+
+        }
         private void onSelectionChanged(string code, bool selected)
         {
             if (code.Equals("--1")) return;
@@ -92,27 +173,19 @@ namespace WorldMapMaster.src
         public override void OnDataFromServer(byte[] data)
         {
             base.OnDataFromServer(data);
-            GuiElementDropDown wpList = this.guiDialogWorldMap.Composers[key].GetElement("wplist") as GuiElementDropDown;
-
-            valData.Clear();
-            dispData.Clear();
-
-            valData.Add("--1");
-            dispData.Add("None");
-
-            foreach (Waypoint waypoint in ownWaypoints)
-            {
-                valData.Add(waypoint.Guid);
-                dispData.Add(waypoint.Title);
-            }
-
-            wpList.SetList(valData.ToArray(), dispData.ToArray());
+            UpdateList();
             //ComposeDialogExtras();
         }
 
         public override void OnMapClosedClient()
         {
             base.OnMapClosedClient();
+        }
+
+        public override void Dispose()
+        {
+            base.Dispose();
+            
         }
     }
 }
