@@ -1,65 +1,55 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Vintagestory.API.Client;
 using Vintagestory.API.Common;
 using Vintagestory.API.Common.Entities;
 using Vintagestory.API.Config;
 using Vintagestory.API.MathTools;
 using Vintagestory.GameContent;
-using static System.Net.Mime.MediaTypeNames;
 
 namespace WorldMapMaster.src
 {
     public class WaypointListItem
     {
-        public string code = "";
-        public string title = "";
-        public int id = 0;
-        public float distance = 0;
+        public string uid { get; set; } = string.Empty; // internal identifier of waypoint
+        public string Title { get; set; } = string.Empty; // waypoint name
+        public int Id { get; set; } // waypoint number
+        public float Distance { get; set; } // distance
+
+
     }
+
     public class WaypointMapLayerFixed : WaypointMapLayer
     {
-        /*
-        List<string> valData = new List<string>();
-        List<string> dispData = new List<string>();
-        */
-        List<WaypointListItem> wpListData = new List<WaypointListItem>();
-
-        readonly string key = "worldmap-layer-waypoints";
-        private ICoreClientAPI capi;
-        private string qsText = "";
-        private string wpListOrder = "timeasc";
+        private List<WaypointListItem> wpListData = new(); // stores waypoint data on the map
+        private readonly string key = "worldmap-layer-waypoints"; // api key
+        private readonly ICoreClientAPI capi; 
+        private string qsText = string.Empty; // search
+        private string wpListOrder = "timeasc"; // sorting (time ascendig by default)
         private GuiDialogWorldMap guiDialogWorldMap;
         private GuiComposer compo;
+        private int anti = 2147483647;
 
-
-        public WaypointMapLayerFixed(ICoreAPI api, IWorldMapManager mapSink) 
+        public WaypointMapLayerFixed(ICoreAPI api, IWorldMapManager mapSink)
             : base(api, mapSink)
         {
-            WorldMapMasterModSystem.Api.Logger.Event("[worldmapmaster] WaypointMapLayerFixed instanciated. Side: " + WorldMapMasterModSystem.Api.Side);
+            WorldMapMasterModSystem.Api.Logger.Event($"[worldmapmaster] WaypointMapLayerFixed instantiated. Side: {WorldMapMasterModSystem.Api.Side}");
             capi = api as ICoreClientAPI;
         }
 
         public override void ComposeDialogExtras(GuiDialogWorldMap guiDialogWorldMap = null, GuiComposer compo = null)
         {
-            if(guiDialogWorldMap != null)
-                this.guiDialogWorldMap = guiDialogWorldMap;
-            if(compo != null)
-                this.compo = compo;
-
+            this.guiDialogWorldMap = guiDialogWorldMap ?? this.guiDialogWorldMap;
+            this.compo = compo ?? this.compo;
             UpdateList();
 
-            ElementBounds dlgBounds =
-                ElementStdBounds.AutosizedMainDialog
+            ElementBounds dlgBounds = ElementStdBounds.AutosizedMainDialog
                 .WithFixedPosition(
                     (this.compo.Bounds.renderX + this.compo.Bounds.OuterWidth) / RuntimeEnv.GUIScale + 10,
                     this.compo.Bounds.renderY / RuntimeEnv.GUIScale + 120
                 )
-                .WithAlignment(EnumDialogArea.None)
-            ;
+                .WithAlignment(EnumDialogArea.None);
 
             ElementBounds bgBounds = ElementBounds.Fill.WithFixedPadding(GuiStyle.ElementToDialogPadding);
             bgBounds.BothSizing = ElementSizing.FitToChildren;
@@ -70,16 +60,28 @@ namespace WorldMapMaster.src
                     .AddShadedDialogBG(bgBounds, false)
                     .AddDialogTitleBar(Lang.Get("Your waypoints:"), () => { this.guiDialogWorldMap.Composers[key].Enabled = false; })
                     .BeginChildElements(bgBounds)
-                        .AddDropDown(wpListData.Select(o => o.code).ToArray(), wpListData.Select(o => o.title).ToArray(), 0, onSelectionChanged, ElementBounds.Fixed(0, 75, 300, 35), "wplist")
-                        .AddAutoclearingText(ElementBounds.Fixed(0, 30, 120, 35), onQSChanged, null, "qs")
-                        .AddDropDown(new string[] { "timeasc", "timedesc", "distanceasc", "distancedesc", "titleasc", "titledesc" }, new string[] { "Время (возраст.)", "Время (убыв.)", "Расстояние (возраст.)", "Расстояние (убыв.)", "Название (а->я)", "Название (я->a)" }, 0, onOrderingChanged, ElementBounds.Fixed(125, 30, 125, 35), "orderlist")
+                        .AddDropDown(wpListData.Select(o => o.uid).ToArray(),
+                                     wpListData.Select(o => o.Title).ToArray(),
+                                     0,
+                                     onSelectionChanged,
+                                     ElementBounds.Fixed(0, 75, 300, 35), "wplist")
+                        .AddAutoclearingText(ElementBounds.Fixed(0, 30, 120, 35),
+                                             onQSChanged,
+                                             null,
+                                             "qs")
+                        .AddDropDown(new[] {Lang.Get("timeasc"), Lang.Get("timedesc"), Lang.Get("distanceasc"), Lang.Get("distancedesc"), Lang.Get("titleasc"), Lang.Get("titledesc")},
+                                     new[] {Lang.Get("timeasc"), Lang.Get("timedesc"), Lang.Get("distanceasc"), Lang.Get("distancedesc"), Lang.Get("titleasc"), Lang.Get("titledesc")},
+                                     0,
+                                     onOrderingChanged,
+                                     ElementBounds.Fixed(125, 30, 125, 35), 
+                                     "orderlist")
                     .EndChildElements()
-                    .Compose()
-            ;
-            GuiElementTextInput qsTextElement = this.guiDialogWorldMap.Composers[key].GetElement("qs") as GuiElementTextInput;
+                    .Compose();
+
+            var qsTextElement = this.guiDialogWorldMap.Composers[key].GetElement("qs") as GuiElementTextInput;
             qsTextElement.SetValue(qsText);
             qsTextElement.SetPlaceHolderText("Поиск...");
-            GuiElementDropDown orderList = this.guiDialogWorldMap.Composers[key].GetElement("orderlist") as GuiElementDropDown;
+            var orderList = this.guiDialogWorldMap.Composers[key].GetElement("orderlist") as GuiElementDropDown;
             orderList.SetSelectedValue(wpListOrder);
             this.guiDialogWorldMap.Composers[key].Enabled = false;
         }
@@ -89,88 +91,76 @@ namespace WorldMapMaster.src
             qsText = text;
             UpdateList();
         }
-        private void onOrderingChanged(string code, bool selected)
+
+        private void onOrderingChanged(string uid, bool selected)
         {
-            wpListOrder = code;
+            wpListOrder = uid;
             UpdateList();
         }
-        private void UpdateList()
-        {
-            GuiElementDropDown wpList = null;
 
-            if(this.guiDialogWorldMap.Composers[key] != null)
-                wpList = this.guiDialogWorldMap.Composers[key].GetElement("wplist") as GuiElementDropDown;
-
-            /*
-            valData.Clear();
-            dispData.Clear();
+        private void UpdateList() //issue: When the player moves, the method is called too often (possibly to update the point information), which causes freezes
             
-            valData.Add("--1");
-            dispData.Add("None");
-
-            foreach (Waypoint waypoint in ownWaypoints)
             {
-                if (waypoint.Title.Contains(qsText, StringComparison.InvariantCultureIgnoreCase))
+                var wpList = this.guiDialogWorldMap.Composers[key]?.GetElement("wplist") as GuiElementDropDown; //display wpList contents in a drop-down list
+                wpListData.Clear();
+                int counter = 0; //to assign a point number
+
+                EntityPos playerPosition = capi.World.Player.Entity.Pos; //player entity position is taken from the client API (possibly a request to the server)
+
+                foreach (Waypoint waypoint in ownWaypoints) //checks the distance for each point
                 {
-                    valData.Add(waypoint.Guid);
-                    dispData.Add(waypoint.Title);
+                    if (waypoint.Title.Contains(qsText, StringComparison.InvariantCultureIgnoreCase)) //register-insensitive comparison
+                    {
+                        float distance = (float)Math.Sqrt(Math.Pow(playerPosition.X - waypoint.Position.X, 2) + Math.Pow(playerPosition.Z - waypoint.Position.Z, 2));
+                        wpListData.Add(new WaypointListItem
+                        {
+                            uid = waypoint.Guid, //is taken from uid. If the UID is empty (null), then... (do processing)
+                            Title = $"{waypoint.Title} - {distance:F2}m",
+                            Distance = distance,
+                            Id = counter++
+                        }); //order number of the point in list
+                    }
                 }
-            }
-            */
 
-            wpListData.Clear();
-            int counter = 0;
-
-            EntityPos playerPosition = capi.World.Player.Entity.Pos;
-
-            foreach (Waypoint waypoint in ownWaypoints)
-            {
-                if (waypoint.Title.Contains(qsText, StringComparison.InvariantCultureIgnoreCase))
+                wpListData = wpListOrder switch
                 {
-                    float distance = (float)Math.Sqrt(Math.Pow(playerPosition.X - waypoint.Position.X, 2) + Math.Pow(playerPosition.Z - waypoint.Position.Z, 2));
-                    wpListData.Add(new WaypointListItem() { code = waypoint.Guid, title = $"{waypoint.Title} - {distance:F2}m", distance = distance, id = counter++ });
-                }
+                    "timeasc" => wpListData.OrderBy(o => o.Id).ToList(),
+                    "timedesc" => wpListData.OrderByDescending(o => o.Id).ToList(),
+                    "distanceasc" => wpListData.OrderBy(o => o.Distance).ToList(),
+                    "distancedesc" => wpListData.OrderByDescending(o => o.Distance).ToList(),
+                    "titleasc" => wpListData.OrderBy(o => o.Title).ToList(),
+                    "titledesc" => wpListData.OrderByDescending(o => o.Title).ToList(),
+                };
+
+                wpListData.Insert(0, new WaypointListItem { uid = "--1", Title = "- - -", Distance = 0, Id = -1 });
+
+                wpList?.SetList(wpListData.Select(o => o.uid).ToArray(), wpListData.Select(o => o.Title).ToArray());
+
             }
 
-            switch(wpListOrder) /* sorting of waypoints */
-            {
-                case "timedesc":
-                    wpListData = wpListData.OrderByDescending(o => o.id).ToList();
-                    break;
-                case "distanceasc":
-                    wpListData = wpListData.OrderBy(o => o.distance).ToList();
-                    break;
-                case "distancedesc":
-                    wpListData = wpListData.OrderByDescending(o => o.distance).ToList();
-                    break;
-                case "timeasc":
-                    break;
-                case "titledesc":
-                    wpListData = wpListData.OrderByDescending(o => o.title).ToList();
-                    break;
-                case "titleasc":
-                    wpListData = wpListData.OrderBy(o => o.title).ToList();
-                    break;
-            }
-
-            wpListData.Insert(0, new WaypointListItem() { code = "--1", title = "- - -", distance = 0, id = -1 });
-
-            if (wpList != null)
-                wpList.SetList(wpListData.Select(o => o.code).ToArray(), wpListData.Select(o => o.title).ToArray());
-
-        }
-        private void onSelectionChanged(string code, bool selected)
+        private void onSelectionChanged(string uid, bool selected) //function of GuiElementDropDown
         {
-            if (code.Equals("--1")) return;
+            if (string.IsNullOrEmpty(uid))
+            {
+                api.Logger.Error("WMM RE: current waypoint uid is null (1st defence).");
+                return;
+            }
+            if (uid.Equals("--1")) return;
 
-            GuiElementMap mapElem = compo.GetElement("mapElem") as GuiElementMap;
+            var mapElem = compo.GetElement("mapElem") as GuiElementMap;
 
             foreach (Waypoint waypoint in ownWaypoints)
             {
-                if (waypoint.Guid.Equals(code))
+                if (waypoint?.Guid == null) //if uid is empty
                 {
-                    BlockPos pos = waypoint.Position.AsBlockPos;
-                    mapElem.CenterMapTo(pos);
+                    api.Logger.Error("WMM RE: current waypoint uid is null (2nd defence).");
+                    continue; //skip
+                }
+
+                if (waypoint.Guid.Equals(uid)) //if uid equals waypoint guid
+                {
+                    BlockPos pos = waypoint.Position.AsBlockPos; //set point coordinates (BlockPos pos - XYZ coordinates of the block)
+                    mapElem.CenterMapTo(pos); //center the map on coordinates
                     break;
                 }
             }
@@ -180,7 +170,6 @@ namespace WorldMapMaster.src
         {
             base.OnDataFromServer(data);
             UpdateList();
-            //ComposeDialogExtras();
         }
 
         public override void OnMapClosedClient()
@@ -191,7 +180,6 @@ namespace WorldMapMaster.src
         public override void Dispose()
         {
             base.Dispose();
-            
         }
     }
 }
