@@ -70,15 +70,15 @@ namespace WorldMapMaster.src
                     .AddShadedDialogBG(bgBounds, false)
                     .AddDialogTitleBar(Lang.Get("Your waypoints:"), () => { this.guiDialogWorldMap.Composers[key].Enabled = false; })
                     .BeginChildElements(bgBounds)
-                        .AddDropDown(wpListData.Select(o => o.code).ToArray(), wpListData.Select(o => o.title).ToArray(), 0, onSelectionChanged, ElementBounds.Fixed(0, 120, 160, 35), "wplist")
-                        .AddAutoclearingText(ElementBounds.Fixed(0, 30, 160, 35), onQSChanged, null, "qs")
-                        .AddDropDown(new string[] { "timeasc", "timedesc", "distanceasc", "distancedesc" }, new string[] { "By time added (asc)", "By time added (desc)", "By distance (asc)", "By distance (desc)" }, 0, onOrderingChanged, ElementBounds.Fixed(0, 75, 160, 35), "orderlist")
+                        .AddDropDown(wpListData.Select(o => o.code).ToArray(), wpListData.Select(o => o.title).ToArray(), 0, onSelectionChanged, ElementBounds.Fixed(0, 75, 300, 35), "wplist")
+                        .AddAutoclearingText(ElementBounds.Fixed(0, 30, 120, 35), onQSChanged, null, "qs")
+                        .AddDropDown(new string[] { "timeasc", "timedesc", "distanceasc", "distancedesc", "titleasc", "titledesc" }, new string[] { "Время (возраст.)", "Время (убыв.)", "Расстояние (возраст.)", "Расстояние (убыв.)", "Название (а->я)", "Название (я->a)" }, 0, onOrderingChanged, ElementBounds.Fixed(125, 30, 125, 35), "orderlist")
                     .EndChildElements()
                     .Compose()
             ;
             GuiElementTextInput qsTextElement = this.guiDialogWorldMap.Composers[key].GetElement("qs") as GuiElementTextInput;
             qsTextElement.SetValue(qsText);
-            qsTextElement.SetPlaceHolderText("Quick filter");
+            qsTextElement.SetPlaceHolderText("Поиск...");
             GuiElementDropDown orderList = this.guiDialogWorldMap.Composers[key].GetElement("orderlist") as GuiElementDropDown;
             orderList.SetSelectedValue(wpListOrder);
             this.guiDialogWorldMap.Composers[key].Enabled = false;
@@ -132,7 +132,7 @@ namespace WorldMapMaster.src
                 }
             }
 
-            switch(wpListOrder)
+            switch(wpListOrder) /* sorting of waypoints */
             {
                 case "timedesc":
                     wpListData = wpListData.OrderByDescending(o => o.id).ToList();
@@ -145,9 +145,15 @@ namespace WorldMapMaster.src
                     break;
                 case "timeasc":
                     break;
+                case "titledesc":
+                    wpListData = wpListData.OrderByDescending(o => o.title).ToList();
+                    break;
+                case "titleasc":
+                    wpListData = wpListData.OrderBy(o => o.title).ToList();
+                    break;
             }
 
-            wpListData.Insert(0, new WaypointListItem() { code = "--1", title = "None", distance = 0, id = -1 });
+            wpListData.Insert(0, new WaypointListItem() { code = "--1", title = "- - -", distance = 0, id = -1 });
 
             if (wpList != null)
                 wpList.SetList(wpListData.Select(o => o.code).ToArray(), wpListData.Select(o => o.title).ToArray());
