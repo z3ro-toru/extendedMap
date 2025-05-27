@@ -44,11 +44,11 @@ namespace WorldMapMaster.src
 
         public override void ComposeDialogExtras(GuiDialogWorldMap guiDialogWorldMap = null, GuiComposer compo = null)
         {
-            this.guiDialogWorldMap = guiDialogWorldMap ?? this.guiDialogWorldMap;
-            this.compo = compo ?? this.compo;
-            UpdateList(); //called 1
-            api.Logger.Event("WMM RE: UpdateList() cause ComposeDialogExtras (line 42)"); // DEBUG ONLY //
-
+            if (guiDialogWorldMap != null)
+                this.guiDialogWorldMap = guiDialogWorldMap;
+            if (compo != null)
+                this.compo = compo;
+            
             ElementBounds dlgBounds = ElementStdBounds.AutosizedMainDialog
                 .WithFixedPosition(
                     (this.compo.Bounds.renderX + this.compo.Bounds.OuterWidth) / RuntimeEnv.GUIScale + 10,
@@ -58,6 +58,9 @@ namespace WorldMapMaster.src
 
             ElementBounds bgBounds = ElementBounds.Fill.WithFixedPadding(GuiStyle.ElementToDialogPadding);
             bgBounds.BothSizing = ElementSizing.FitToChildren;
+
+            UpdateList(); //called 1
+            api.Logger.Event("WMM RE: UpdateList() cause ComposeDialogExtras (line 42)"); // DEBUG ONLY //
 
             this.guiDialogWorldMap.Composers[key] =
                 capi.Gui
@@ -69,7 +72,8 @@ namespace WorldMapMaster.src
                                      wpTempDataList.Select(o => o.Title).ToArray(),
                                      0,
                                      onSelectionChanged,
-                                     ElementBounds.Fixed(0, 75, 300, 35), "wpDisplayedList")
+                                     ElementBounds.Fixed(0, 75, 300, 35), 
+                                     "wpDisplayedList")
                         .AddAutoclearingText(ElementBounds.Fixed(0, 30, 120, 35),
                                              onQSChanged,
                                              null,
@@ -84,9 +88,9 @@ namespace WorldMapMaster.src
                     .Compose();
 
             var qsTextElement = this.guiDialogWorldMap.Composers[key].GetElement("qs") as GuiElementTextInput;
-            qsTextElement.SetValue(qsText);
-            qsTextElement.SetPlaceHolderText(Lang.Get("Search..."));
             var orderList = this.guiDialogWorldMap.Composers[key].GetElement("orderlist") as GuiElementDropDown;
+            qsTextElement.SetValue(qsText);
+            qsTextElement.SetPlaceHolderText(Lang.Get("Search..."));            
             orderList.SetSelectedValue(sortingOrder);
             this.guiDialogWorldMap.Composers[key].Enabled = false;
         }
@@ -106,7 +110,26 @@ namespace WorldMapMaster.src
             UpdateList(); //called 3
         }
 
-        
+        private void UpdateListAsync()
+        {
+            Task.Run(() =>
+                {
+                    UpdateList();
+                }).ContinueWith(t =>
+                capi.Event.EnqueueMainThreadTask(RefreshUI, "wmmupdatelist"));
+        }
+
+        private void RefreshUI()
+        {
+            var wpDisplayedList = this.guiDialogWorldMap.Composers[key]?.GetElement("wpDisplayedList") as GuiElementDropDown;
+            if (wpDisplayedList != null)
+            {
+                wpDisplayedList.SetList(
+                    wpTempDataList.Select(o => o.uid).ToArray(),
+                    wpTempDataList.Select(o => o.Title).ToArray()
+                );
+            }
+        }
 
         private void UpdateList() //issue: When the player moves, the method is called too often (possibly to update the point information), which causes freezes            
         {            
@@ -207,7 +230,7 @@ namespace WorldMapMaster.src
         {
             base.OnDataFromServer(data);
             api.Logger.Event("WMM RE: UpdateList() cause OnDataFromServer, line 175"); // DEBUG ONLY //
-            Task.Run(UpdateList);
+            UpdateListAsync();
         }
 
         public override void OnMapClosedClient()
