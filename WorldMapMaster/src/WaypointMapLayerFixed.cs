@@ -142,11 +142,6 @@ namespace WorldMapMaster.src
             {
                 if (waypoint.Title.Contains(qsText, StringComparison.InvariantCultureIgnoreCase)) //register-insensitive comparison
                 {
-                        if (waypoint.Guid == null) //server returns an empty Guid for story locations and death points (can be solved by restarting the server)
-                        {
-                            waypoint.Guid = Guid.NewGuid().ToString();
-                            api.Logger.Warning("WMM RE: Waypoint (" + waypoint.Title + ") GUID fixed"); //fixing trouble of vanilla game (Tyron pls fix it) // DEBUG ONLY //
-                        };
                         float distance = (float)Math.Sqrt(
                             Math.Pow(playerPosition.X - waypoint.Position.X, 2) 
                             + Math.Pow(playerPosition.Z - waypoint.Position.Z, 2));
@@ -196,6 +191,19 @@ namespace WorldMapMaster.src
                 );           
         }
 
+        private void UpdateList(List<Waypoint> waypoints)
+        {
+            foreach (Waypoint waypoint in waypoints)
+            {
+                if (waypoint.Guid == null) //server returns an empty Guid for story locations and death points (can be solved by restarting the server)
+                {
+                    waypoint.Guid = Guid.NewGuid().ToString();
+                    api.Logger.Warning("WMM RE: Waypoint (" + waypoint.Title + ") GUID fixed"); //fixing trouble of vanilla game (Tyron pls fix it) // DEBUG ONLY //
+                }
+                ;
+            }
+        }
+
         private void onSelectionChanged(string uid, bool selected) //function of GuiElementDropDown
         {
             if (string.IsNullOrEmpty(uid))
@@ -228,9 +236,12 @@ namespace WorldMapMaster.src
 
         public override void OnDataFromServer(byte[] data)
         {
-            base.OnDataFromServer(data);
+            ownWaypoints.Clear();
+            List<Waypoint> waypointsFromServer = SerializerUtil.Deserialize<List<Waypoint>>(data);
+            UpdateList(waypoints);
+            ownWaypoints.AddRange(waypoints);
+            RebuildMapComponents();
             api.Logger.Event("WMM RE: UpdateList() cause OnDataFromServer, line 175"); // DEBUG ONLY //
-            UpdateListAsync();
         }
 
         public override void OnMapClosedClient()
