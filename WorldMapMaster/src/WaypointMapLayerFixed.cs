@@ -236,11 +236,9 @@ namespace WorldMapMaster.src
 
         public override void OnDataFromServer(byte[] data)
         {
-            ownWaypoints.Clear();
             List<Waypoint> waypointsFromServer = SerializerUtil.Deserialize<List<Waypoint>>(data);
-            UpdateList(waypoints);
-            ownWaypoints.AddRange(waypoints);
-            RebuildMapComponents();
+            UpdateList(waypointsFromServer);
+            base.OnDataFromServer(SerializerUtil.Seserialize(waypointsFromServer));
             api.Logger.Event("WMM RE: UpdateList() cause OnDataFromServer, line 175"); // DEBUG ONLY //
         }
 
