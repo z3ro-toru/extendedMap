@@ -13,7 +13,6 @@ using Vintagestory.API.Config;
 using Vintagestory.API.MathTools;
 using Vintagestory.GameContent;
 using System.Collections;
-using Vintagestory.API.Util;
 
 namespace WorldMapMaster.src
 {
@@ -239,7 +238,7 @@ namespace WorldMapMaster.src
         {
             List<Waypoint> waypointsFromServer = SerializerUtil.Deserialize<List<Waypoint>>(data);
             UpdateList(waypointsFromServer);
-            base.OnDataFromServer(SerializerUtil.Serialize(waypointsFromServer));
+            base.OnDataFromServer(SerializerUtil.Seserialize(waypointsFromServer));
             api.Logger.Event("WMM RE: UpdateList() cause OnDataFromServer, line 175"); // DEBUG ONLY //
         }
 
@@ -256,7 +255,6 @@ namespace WorldMapMaster.src
 }
 /* Original author: ZigTheHedge (all code of mod)
  z3r0-t0ru: partial refactoring, bugfixes, comments
-kryptokatze: help with UpdateList() issue
 history:
 Jan-22-2025: 1.0 - initial commit
 Jan-24-2025: 1.0.1 - update, GUI fixes, added OnDataFromServer
@@ -265,5 +263,4 @@ Jan-29-2025: 1.0.3 - Fixed "My waypoints" windows to stay on screen forever - ad
 Jan-29-2025: 1.0.4-pre.1 - Filtering and Sorting - added UpdateList() 
 May-13-2025: 1.0.4-pre.2 - rewrite, added anti-null exception
 May-14-2025: 1.0.4-pre.3 - Fix: if the server returns Guid == null, mod generates a new one for the point; total and complete code commenting XD
-May-17-2025: 1.0.4-pre.4 - UpdateList is allocated to a separate thread ()
-May-30-2025: 1.0.5 - lags removed, improved Null-check GUID*/
+May-17-2025: 1.0.4-pre.4 - UpdateList is allocated to a separate thread ()*/
