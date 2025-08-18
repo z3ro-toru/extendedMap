@@ -12,11 +12,11 @@ namespace xtendedMap.src
 //wanna the final boss? He is there =)
 /* issue: When the player moves, the method is called too often 
 (possibly to update the point information), which causes freezes 
-4 times when server send data to client (source of freezes)
+4 times when server send data to client (OnDataFromServer) (source of freezes)
 many times when player type text in quick search bar
 1 times when ordering of waypoints changed
-many times when player choose a waypoint
-2 times when player toggle on/off minimap (WHY)*/
+2 times when player toggle on/off minimap (WHY)
+every time when player select another waypoint (WTF)*/
 
 /*SOLUTION
  idk now*/
@@ -24,34 +24,32 @@ many times when player choose a waypoint
         public void UpdateList() 
         {
             #region beta-test
-            List<Waypoint> ownWaypointsCOPY = new List<Waypoint>(ownWaypoints); //copy of ownWaypoints. future feature
+            List<Waypoint>ownWaypointsCOPY = new List<Waypoint>(ownWaypoints); //copy of ownWaypoints. future feature
             #endregion
 
-            var wpList = this.guiDialogWorldMap.Composers[key]?.GetElement("wplist") 
+            EntityPos playerPosition = capi.World.Player.Entity.Pos; //look for the player coordinates
+
+            GuiElementDropDown wpList = this.guiDialogWorldMap.Composers[key]?.GetElement("wplist") 
                 as GuiElementDropDown; //display wpList contents in a drop-down list. Now list is empty.
             wpListData.Clear();
-            int counter = -1; //to assign a point number            
-
-            EntityPos playerPosition = capi.World.Player.Entity.Pos; //look for the player coordinates
+            int counter = 0; //to assign a point number            
 
             foreach (Waypoint waypoint in ownWaypoints) //waypoints computing
             {
                 if (waypoint.Title.Contains(qsText, StringComparison.InvariantCultureIgnoreCase)) //register-insensitive comparison
                 {
-                    /* issue of vanilla game:
-                    game doesn't generate GUIDs for death points 
-                    and plot locations (can be solved by restarting the server)
-                    WTF, developers? */
+/* issue of vanilla game: game doesn't generate GUIDs for death points 
+and plot locations (can be solved by restarting the server). WTF, developers? */
                     if (waypoint.Guid == null)
                     {
                         waypoint.Guid = Guid.NewGuid().ToString();
                         api.Logger.Warning("[xtMap]: Waypoint (" + waypoint.Title + ") GUID regenerated"); // DEBUG ONLY //
                     }
-                    /* idea for optimization: calculate the distance only 
-                    when player has opened a large world map 
-                    need to find a normal way to determine if window is open or not.*/
-                    float distance = (float)Math.Sqrt(Math.Pow(playerPosition.X - waypoint.Position.X, 2) + Math.Pow(playerPosition.Z - waypoint.Position.Z, 2));
-                    // we check that name of waypoint contains text from search bar, calculated the distance, and now add it to the list
+//INTERESTING: After client has generated a GUID for the point, server accepts this GUID as its own and uses it.
+                    float distance = capi.World.Player.Entity.Pos.XYZ.DistanceTo(waypoint.Position);
+/* idea for optimization: calculate the distance only when player has opened a large world map 
+need to find a normal way to determine if window is open or not.*/                    
+// we check that name of waypoint contains text from search bar, calculated the distance, and now add it to the list
                     wpListData.Add(new WaypointListItem
                     {
                         Id = counter++, //order number of point in list. It's starts with zero 
@@ -62,15 +60,19 @@ many times when player choose a waypoint
                     // api.Logger.Event("[xtMap]: UpdateList() - waypoint " + waypoint.Guid + " " + waypoint.Title + " added"); // DEBUG ONLY //
                 }
             }
+            
             wpListData = wpListOrder switch // sorting 
             {
                 "timeasc" => wpListData.OrderBy(o => o.Id).ToList(),
                 "timedesc" => wpListData.OrderByDescending(o => o.Id).ToList(),
                 "distanceasc" => wpListData.OrderBy(o => o.Distance).ToList(),
                 "distancedesc" => wpListData.OrderByDescending(o => o.Distance).ToList(),
+                /*"distancedesc" => wpListData.OrderByDescending(w => playerPosition.DistanceTo(w.Position)).ToList(),
+                "distanceasc" => wpListData.OrderBy(w => playerPosition.DistanceTo(w.Position)).ToList(),*/
                 "titleasc" => wpListData.OrderBy(o => o.Title).ToList(),
                 "titledesc" => wpListData.OrderByDescending(o => o.Title).ToList(),
             };
+            
             // ñrutch solution: so that we have an empty line in DropDownElement, we insert this string into the list.
             wpListData.Insert(0, new WaypointListItem { Guid = "--1", Title = "- - -", Distance = 0, Id = -1 });
 
@@ -79,7 +81,7 @@ many times when player choose a waypoint
             if (wpList != null) wpList.SetList(
                     wpListData.Select(o => o.Guid).ToArray(), 
                     wpListData.Select(o => o.Title).ToArray()
-                    );
+            );
 
             api.Logger.Warning("[xtMap]: waypoints list updated, (" + counter++ + ") waypoints added");
         }

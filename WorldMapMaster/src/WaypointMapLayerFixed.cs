@@ -39,12 +39,15 @@ namespace xtendedMap.src
             wpListOrder = uid;
             UpdateList(); //called 3
         }       
+        //after this function OnDataFromServer() calling too... WHY?
         private void onSelectionChanged(string uid, bool selected) //function of GuiElementDropDown
         {
-            if (string.IsNullOrEmpty(uid))
+            switch (string.IsNullOrEmpty(uid))
             {
-                api.Logger.Error("[xtMap]: current waypoint uid is null (line 44).");
-                return;
+                case true: 
+                    api.Logger.Error("[xtMap]: current waypoint uid is null (line 44)."); return;
+                case false:
+                    break;
             }
             if (uid.Equals("--1")) return; //skip
 
