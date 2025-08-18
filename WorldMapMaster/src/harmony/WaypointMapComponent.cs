@@ -11,7 +11,7 @@ using Vintagestory.API.Util;
 using Vintagestory.GameContent;
 using Vintagestory.API.Common.Entities;
 
-namespace WorldMapMaster.src.harmony
+namespace xtendedMap.src.harmony
 {
     // Add check for a "Delete waypoint" hotkey
     [HarmonyPatch(typeof(WaypointMapComponent), "OnMouseMove")]

@@ -1,15 +1,15 @@
 {
   "type": "code",
-  "modid": "worldmapmaster",
-  "name": "World Map Master (WMM)",
+  "modid": "xtndmap",
+  "name": "xtendedMap(on WMM)",
   "authors": [
-    "ZigTheHedge, z3r0-toru"
+    "z3r0-toru, ZigTheHedge"
   ],
-  "description": "A couple of tweaks and QOL additions for the World Map",
+  "description": "A couple of tweaks and QOL additions for the World Map. Based on WorldMapMaster by ZigTheHedge",
   "requiredOnClient": false,
   "requiredOnServer": false,
-  "version": "1.0.4-pre.3",
+  "version": "1.4.0-pre.1",
   "dependencies": {
-    "game": "1.19.8-1.20.0-x"
+    "game": "1.19.8-1.20.0x"
   }
 }

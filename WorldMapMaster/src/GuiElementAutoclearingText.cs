@@ -1,11 +1,7 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Vintagestory.API.Client;
 
-namespace WorldMapMaster.src
+namespace xtendedMap.src
 {
     public class GuiElementAutoclearingText : GuiElementTextInput
     {
@@ -30,18 +26,14 @@ namespace WorldMapMaster.src
         /// <param name="onTextChanged">The event fired when the text is changed.</param>
         /// <param name="font">The font of the text.</param>
         /// <param name="key">The name of this text component.</param>
-        public static GuiComposer AddAutoclearingText(this GuiComposer composer, ElementBounds bounds, Action<string> onTextChanged, CairoFont font = null, string key = null)
+        public static GuiComposer AddAutoclearingText(
+            this GuiComposer composer, ElementBounds bounds, Action<string> onTextChanged, CairoFont font = null, string key = null)
         {
-            if (font == null)
-            {
-                font = CairoFont.TextInput();
-            }
-
-            if (!composer.Composed)
-            {
-                composer.AddInteractiveElement(new GuiElementAutoclearingText(composer.Api, bounds, onTextChanged, font), key);
-            }
-
+            if (font == null) font = CairoFont.TextInput();
+            if (!composer.Composed) composer.AddInteractiveElement(
+                new GuiElementAutoclearingText(composer.Api, bounds, onTextChanged, font), key
+                );
+         
             return composer;
         }
 
@@ -55,8 +47,5 @@ namespace WorldMapMaster.src
         {
             return (GuiElementAutoclearingText)composer.GetElement(key);
         }
-
-
-
     }
 }

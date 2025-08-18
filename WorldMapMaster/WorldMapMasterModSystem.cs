@@ -1,19 +1,19 @@
 ﻿using HarmonyLib;
-using System;
 using System.Linq;
 using System.Runtime.CompilerServices;
+using System;
 using Vintagestory.API.Client;
 using Vintagestory.API.Common;
 using Vintagestory.API.Config;
 using Vintagestory.API.MathTools;
 using Vintagestory.GameContent;
-using WorldMapMaster.src;
+using xtendedMap.src;
 
-namespace WorldMapMaster
+namespace xtendedMap
 {
     public class WorldMapMasterModSystem : ModSystem
     {
-        Harmony harmony = new Harmony("com.cwelth.worldmapmaster");
+        Harmony harmony = new Harmony("com.z3ro.worldmapmaster_xtndmap");
         public static int wpIndex = -1;
         public static Vec3d newWpPos;
         public static ICoreAPI Api;
@@ -22,6 +22,7 @@ namespace WorldMapMaster
 
         //public override bool ShouldLoad(EnumAppSide forSide) => forSide == EnumAppSide.Client;
 
+        #region initialize
         public override void StartPre(ICoreAPI api)
         {
             base.StartPre(api);
@@ -35,7 +36,6 @@ namespace WorldMapMaster
         {
             base.Start(api);
         }
-
         public override void StartClientSide(ICoreClientAPI api)
         {
             base.StartClientSide(api);
@@ -49,7 +49,10 @@ namespace WorldMapMaster
             api.Input.SetHotKeyHandler("waypointAdd", AddNewWaypoint);
             api.Input.SetHotKeyHandler("waypointQuickAdd", QuickAddWaypoint);
         }
-        private bool DeleteWaypoint(KeyCombination keyCombination)
+        #endregion
+
+        #region functions
+        private bool DeleteWaypoint(KeyCombination keyCombination) //Fast deleting waypoint
         {
             if (wpIndex > -1)
             {
@@ -75,23 +78,25 @@ namespace WorldMapMaster
             addWpDlg.TryOpen();
 
             return true;
-        }
+        } //adding new waypoint
 
-        private bool QuickAddWaypoint(KeyCombination keyCombination)
+        private bool QuickAddWaypoint(KeyCombination keyCombination) //Fast adding waypoint
         {
             Vec3d curPos = capi.World.Player.Entity.Pos.XYZ;
             Vec3d hrPos = curPos.Clone().Sub(capi.World.DefaultSpawnPosition.AsBlockPos);
-            capi.SendChatMessage(string.Format("/waypoint addati {0} ={1} ={2} ={3} {4} {5} {6}", "circle", 
-                curPos.XInt.ToString(GlobalConstants.DefaultCultureInfo), 
+            capi.SendChatMessage(string.Format("/waypoint addati {0} ={1} ={2} ={3} {4} {5} {6}", "circle",
+                curPos.XInt.ToString(GlobalConstants.DefaultCultureInfo),
                 curPos.YInt.ToString(GlobalConstants.DefaultCultureInfo),
                 curPos.ZInt.ToString(GlobalConstants.DefaultCultureInfo), "false", "white", $"{hrPos.XInt}, {hrPos.YInt}, {hrPos.ZInt}"));
 
             return true;
         }
+        #endregion
+
         public override void Dispose()
         {
             base.Dispose();
-            harmony.UnpatchAll("com.cwelth.worldmapmaster");
+            harmony.UnpatchAll("com.z3ro.worldmapmaster_xtndmap");
         }
     }
 }
